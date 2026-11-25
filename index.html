@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jonathan Webster — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    // Apply theme and language before first paint to prevent flashing
+    (function () {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+      const savedLang = localStorage.getItem('lang');
+      const browserLang = (navigator.language || 'en').toLowerCase();
+      document.documentElement.dataset.lang = savedLang || (browserLang.startsWith('sv') ? 'sv' : 'en');
+    })();
+  </script>
+</head>
+<body>
+  <!-- Discreet top-right controls -->
+  <div class="controls" aria-label="Display settings">
+    <button id="lang-toggle" class="control-btn" type="button" title="Switch language">
+      <span data-lang-label="en">EN</span> / <span data-lang-label="sv">SV</span>
+    </button>
+    <button id="theme-toggle" class="control-btn" type="button" aria-label="Toggle color theme" title="Toggle dark/light mode">
+      <span id="theme-icon">◐</span>
+    </button>
+  </div>
+
+ <!-- Fixed Left Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <h1>Jonathan Webster</h1>
+      <div class="name-rule" aria-hidden="true"></div>
+
+      <div class="bio-body">
+        <p data-en="Mechanical design engineer based in northern Sweden, consulting on industrial and medical projects. In my spare time, I like to build things of my own."
+           data-sv="Maskinkonstruktör i Skellefteå som jobbar på konsultbolag mot industri och medicinteknik. På fritiden gillar jag att bygga egna grejer.">
+          Mechanical design engineer based in northern Sweden, consulting on industrial and medical projects. In my spare time, I like to build things of my own.
+        </p>
+        <p class="bio-lead"
+           data-en="Here are some of my projects."
+           data-sv="Här är några av mina projekt.">
+          Here are some of my projects.
+        </p>
+      </div>
+
+      <nav class="bio-links" aria-label="Links">
+        <a href="https://www.youtube.com/@JonathanWebster-lr5rg" target="_blank" rel="noopener">YouTube</a>
+        <a href="https://github.com/jonathanwebster94" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/jonathan-webster-a7460a99/" target="_blank" rel="noopener">LinkedIn</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Scrollable Project Timeline -->
+  <div class="layout">
+    <main class="timeline-wrapper">
+      <ol id="timeline" class="timeline"></ol>
+    </main>
+  </div>
+
+  <script>
+    let projectsData = [];
+
+    function getLang() {
+      return document.documentElement.dataset.lang || 'en';
+    }
+
+    function formatMonthYear(ym, lang) {
+      const [year, month] = ym.split('-').map(Number);
+      const date = new Date(year, month - 1, 1);
+      return new Intl.DateTimeFormat(lang === 'sv' ? 'sv-SE' : 'en-US', {
+        month: 'short',
+        year: 'numeric'
+      }).format(date);
+    }
+
+    function applyStaticTranslations(lang) {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-en]').forEach(el => {
+        el.textContent = el.dataset[lang] || el.dataset.en;
+      });
+      document.querySelectorAll('[data-lang-label]').forEach(el => {
+        el.classList.toggle('active', el.dataset.langLabel === lang);
+      });
+    }
+
+    function renderMedia(item, lang) {
+      if (item.type === 'image') {
+        return `
+          <figure class="media-card">
+            <img src="${item.src}" alt="${item.headline[lang]}" loading="lazy" />
+          </figure>`;
+      }
+
+      if (item.type === 'youtube') {
+        const thumb = `https://i.ytimg.com/vi/${item.youtubeId}/hqdefault.jpg`;
+        const playLabel = lang === 'sv' ? 'Spela video' : 'Play video';
+        return `
+          <div class="media-card yt-facade" data-yt-id="${item.youtubeId}" role="button" tabindex="0" aria-label="${playLabel}">
+            <img src="${thumb}" alt="${item.headline[lang]}" loading="lazy" />
+            <span class="yt-play" aria-hidden="true">▶</span>
+          </div>`;
+      }
+
+      if (item.type === 'pdf') {
+        const openText = lang === 'sv' ? 'Öppna PDF ↗' : 'Open PDF ↗';
+        if (item.thumb) {
+          return `
+            <a class="media-card pdf-preview" href="${item.src}" target="_blank" rel="noopener">
+              <img src="${item.thumb}" alt="${item.headline[lang]}" loading="lazy" />
+              <span class="pdf-overlay-badge">${openText}</span>
+            </a>`;
+        }
+        return `
+          <a class="pdf-card" href="${item.src}" target="_blank" rel="noopener">
+            <span class="pdf-badge">PDF</span>
+            <span class="pdf-filename">${item.src.split('/').pop()}</span>
+            <span class="pdf-action">${openText}</span>
+          </a>`;
+      }
+
+      return '';
+    }
+
+    function renderTimeline() {
+      const lang = getLang();
+      const container = document.getElementById('timeline');
+
+      // Sort newest first
+      const sorted = [...projectsData].sort((a, b) => b.date.localeCompare(a.date));
+
+      container.innerHTML = sorted.map(item => `
+        <li class="timeline-item">
+          <span class="timeline-dot" aria-hidden="true"></span>
+          <time class="timeline-date" datetime="${item.date}">${formatMonthYear(item.date, lang)}</time>
+          <h2 class="timeline-headline">${item.headline[lang] || item.headline.en}</h2>
+          ${renderMedia(item, lang)}
+        </li>
+      `).join('');
+
+      // Attach click-to-load YouTube iframes
+      container.querySelectorAll('.yt-facade').forEach(el => {
+        const activate = () => {
+          const id = el.dataset.ytId;
+          el.outerHTML = `
+            <div class="media-card yt-embed">
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1"
+                title="YouTube video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
+            </div>`;
+        };
+        el.addEventListener('click', activate);
+        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') activate(); });
+      });
+
+      observeItems();
+    }
+
+    function observeItems() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.timeline-item').forEach(el => observer.observe(el));
+    }
+
+    // Event listeners for controls
+    document.getElementById('lang-toggle').addEventListener('click', () => {
+      const next = getLang() === 'en' ? 'sv' : 'en';
+      document.documentElement.dataset.lang = next;
+      localStorage.setItem('lang', next);
+      applyStaticTranslations(next);
+      renderTimeline();
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const current = document.documentElement.dataset.theme;
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    });
+
+    // Initialize
+    applyStaticTranslations(getLang());
+    fetch('projects.json')
+      .then(res => res.json())
+      .then(data => {
+        projectsData = data;
+        renderTimeline();
+      });
+  </script>
+</body>
+</html>

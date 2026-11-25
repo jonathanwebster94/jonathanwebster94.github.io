@@ -1,0 +1,21 @@
+[
+  {
+    "date": "2025-02",
+    "headline": {
+      "en": "Bachelor's thesis - Frame design for a compact CNC mill",
+      "sv": "Examensarbete - Konstruktion av ram för kompakt CNC-fräs"
+    },
+    "type": "pdf",
+    "src": "https://ltu.diva-portal.org/smash/get/diva2:1935887/FULLTEXT01.pdf",
+    "thumb": "assets/FULLTEXT01.png"
+  },
+  {
+    "date": "2023-11",
+    "headline": {
+      "en": "Desktop CNC mill",
+      "sv": "Kompakt CNC-fräs"
+    },
+    "type": "youtube",
+    "youtubeId": "dgojYA7u3IQ"
+  }
+]
